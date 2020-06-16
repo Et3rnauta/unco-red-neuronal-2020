@@ -241,7 +241,8 @@ public class RedNeuronal {
             double salidaMax = -1, indiceMax = -1;
             for (int i = 0; i < salidasNodos.length; i++) {
                 double valorSalida = (dato[dato.length - 1] != i) ? 0 : 1;
-                acumCostes += Math.pow(funcionCosteDerivada(valorSalida, salidasNodos[i]), 2);
+//                acumCostes += Math.pow(funcionCosteDerivada(valorSalida, salidasNodos[i]), 2);
+                acumCostes += Math.abs(funcionCosteDerivada(valorSalida, salidasNodos[i]));
                 cantCostes++;
 
                 if (salidaMax < salidasNodos[i]) {
@@ -324,8 +325,8 @@ class Capa {
 
         //Inicializacion utilizando la distribución Xavier Uniforme
         Random r = new Random();
-        double min = -Math.sqrt(6 / cantArcos + cantSalidas),
-                max = Math.sqrt(6 / cantArcos + cantSalidas);
+        double min = -Math.sqrt(6.0) / Math.sqrt(cantArcos + cantSalidas),
+                max = Math.sqrt(6.0) / Math.sqrt(cantArcos + cantSalidas);
         for (int i = 0; i < w.length; i++) {
             for (int j = 0; j < w[i].length; j++) {
                 w[i][j] = r.nextDouble() * (max - min) + min;

@@ -19,7 +19,7 @@ public class RedNeuronalImparTest {
     public static void setUpClass() {
         System.out.println("Creando la red");
 
-        traductor = new TraductorDatos(cantEntradas);
+        traductor = new TraductorDatos(4);
         for (int i = 0; i < cantEntradas; i++) {
             traductor.addEntrada(0, 16);
         }
@@ -51,7 +51,7 @@ public class RedNeuronalImparTest {
         redNeuronal.toJson("red-impar-test-pre");
 
         System.out.println("Realizando training");
-        redNeuronal.train(5, datosTrainingTraducidos, 4, 100000, datosTestingTraducidos);
+        redNeuronal.train(10, datosTrainingTraducidos, 1, 100000, datosTestingTraducidos);
 
         System.out.println("Realizando un testing posterior y almacenando en /output");
         double porcentajePosterior = redNeuronal.test(datosTestingTraducidos);
