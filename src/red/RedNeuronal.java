@@ -324,8 +324,8 @@ class Capa {
 
         //Inicializacion utilizando la distribución Xavier Uniforme
         Random r = new Random();
-        double min = -Math.sqrt(6) / Math.sqrt(cantArcos + cantSalidas),
-                max = Math.sqrt(6) / Math.sqrt(cantArcos + cantSalidas);
+        double min = -Math.sqrt(6 / cantArcos + cantSalidas),
+                max = Math.sqrt(6 / cantArcos + cantSalidas);
         for (int i = 0; i < w.length; i++) {
             for (int j = 0; j < w[i].length; j++) {
                 w[i][j] = r.nextDouble() * (max - min) + min;
