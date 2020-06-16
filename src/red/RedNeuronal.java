@@ -15,7 +15,7 @@ public class RedNeuronal {
     Capa[] capas;
 
     //Variables para control de entrenamiento    
-    double acumCostes = 0, cantCostes = 0;//promedio de los errores de cada nodo
+    double acumCostes, cantCostes;//promedio de los errores de cada nodo
 
     //Constructor
     /**
@@ -57,6 +57,9 @@ public class RedNeuronal {
      */
     public void train(double learningRate, double[][] datosTraining, int cantMiniBatch,
             int epocas, double[][] datosTesting) {
+
+        acumCostes = 0;
+        cantCostes = 0;
 
         for (int i = 0; i < epocas; i++) {
             gradientDescent(learningRate, datosTraining, cantMiniBatch);
@@ -123,8 +126,8 @@ public class RedNeuronal {
                 //actualizo los pesos de cada arco de la red
                 actualizarNodos(learningRate, datosXBatch);
                 datosRecorridos = 0;
-                datosXBatch = (datosTraining.length / cantMiniBatch) + (datosTraining.length % cantMiniBatch > batchRecorridos ? 1 : 0);
                 batchRecorridos++;
+                datosXBatch = (datosTraining.length / cantMiniBatch) + (datosTraining.length % cantMiniBatch > batchRecorridos ? 1 : 0);
             }
         }
 
@@ -132,7 +135,6 @@ public class RedNeuronal {
         if (datosRecorridos != 0) {
             //actualizo los pesos de cada arco de la red
             actualizarNodos(learningRate, datosXBatch);
-
         }
     }
 
@@ -167,7 +169,7 @@ public class RedNeuronal {
         }
 
         //calculo los deltas de las capas ocultas
-        for (int i = capas.length - 2; i >= 0; i--) {
+        for (int i = ultimaCapa - 1; i >= 0; i--) {
             deltas[i] = new double[capas[i].b.length];
             //recorro los nodos de la capa
             for (int j = 0; j < capas[i].b.length; j++) {
@@ -185,21 +187,24 @@ public class RedNeuronal {
         for (int i = 0; i < capas.length; i++) {
             //recorro todos los nodos
             for (int j = 0; j < capas[i].w.length; j++) {
-                capas[i].nablaB[j] += deltas[i][j];
+                capas[i].delAcumB[j] += deltas[i][j];
                 //recorro todos sus arcos
                 for (int k = 0; k < capas[i].w[j].length; k++) {
-                    capas[i].nablaW[j][k] += salidasNodos[i][k] * deltas[i][j];
+                    capas[i].delAcumW[j][k] += salidasNodos[i][k] * deltas[i][j];
                 }
             }
         }
     }
 
     private void actualizarNodos(double learningRate, int datosXBatch) {
+        //para cada capa
         for (Capa capa : capas) {
-            for (int j = 0; j < capa.w.length; j++) {
-                capa.b[j] += learningRate * capa.nablaB[j] / datosXBatch;
+            //para cada nodo
+            for (int j = 0; j < capa.b.length; j++) {
+                capa.b[j] += (learningRate * (capa.delAcumB[j] / datosXBatch));
+                //para cada arco
                 for (int k = 0; k < capa.w[j].length; k++) {
-                    capa.w[j][k] += learningRate * capa.nablaW[j][k] / datosXBatch;
+                    capa.w[j][k] += (learningRate * (capa.delAcumW[j][k] / datosXBatch));
                 }
                 capa.reiniciarNablas();
             }
@@ -208,16 +213,14 @@ public class RedNeuronal {
 
     //Testing
     /**
-     * Prueba la red con los datos recibidos y almacena valores para que puedan 
+     * Prueba la red con los datos recibidos y almacena valores para que puedan
      * imprimirse en el entrenamiento
-     * 
+     *
      * @param datosTesting : los datos para realizar testing
      * @return valor que representa el porcentaje de aciertos de la red
      */
     public double test(double[][] datosTesting) {
         double aciertos = 0;
-        double costo = 0.0;
-        int e = 0;
 
         for (double[] dato : datosTesting) {
             double[] salidasNodos = dato;
@@ -240,7 +243,7 @@ public class RedNeuronal {
                 double valorSalida = (dato[dato.length - 1] != i) ? 0 : 1;
                 acumCostes += Math.pow(funcionCosteDerivada(valorSalida, salidasNodos[i]), 2);
                 cantCostes++;
-                
+
                 if (salidaMax < salidasNodos[i]) {
                     indiceMax = i;
                     salidaMax = salidasNodos[i];
@@ -253,12 +256,12 @@ public class RedNeuronal {
         return aciertos / datosTesting.length;
     }
 
-     //Conversion
+    //Conversion
     public void toJson(String name) {
         GsonBuilder builder = new GsonBuilder();
         builder.setPrettyPrinting();
         String red2 = builder.create().toJson(this);
-        String NOMBRE_ARCHIVO = "src/salidas/" + name + ".txt";
+        String NOMBRE_ARCHIVO = "src/output/" + name + ".txt";
         try (PrintWriter flujoDeSalida = new PrintWriter(new FileOutputStream(NOMBRE_ARCHIVO))) {
             flujoDeSalida.print(red2);
             System.out.println("Se imprimio correctamente en: " + NOMBRE_ARCHIVO);
@@ -308,16 +311,16 @@ class Capa {
 
     // w[nodo][peso] | pesos
     double[][] w;
-    double[][] nablaW;
+    double[][] delAcumW;
     // b[nodo] | bias
     double[] b;
-    double[] nablaB;
+    double[] delAcumB;
 
     Capa(int cantNodos, int cantArcos, int cantSalidas) {
         this.w = new double[cantNodos][cantArcos];
-        this.nablaW = new double[cantNodos][cantArcos];
+        this.delAcumW = new double[cantNodos][cantArcos];
         this.b = new double[cantNodos];
-        this.nablaB = new double[cantNodos];
+        this.delAcumB = new double[cantNodos];
 
         //Inicializacion utilizando la distribución Xavier Uniforme
         Random r = new Random();
@@ -332,7 +335,7 @@ class Capa {
     }
 
     void reiniciarNablas() {
-        this.nablaW = new double[w.length][w[0].length];
-        this.nablaB = new double[b.length];
+        this.delAcumW = new double[w.length][w[0].length];
+        this.delAcumB = new double[b.length];
     }
 }
