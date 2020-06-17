@@ -9,9 +9,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import javafx.scene.chart.XYChart;
 
 public class RedNeuronal {
 
+    int[] topologia;
+    double learningRate;
+    int cantBatch;
+    int cantEntrenamientos;
+    double errorFinalEntrenamiento;
     Capa[] capas;
 
     //Variables para control de entrenamiento    
@@ -54,30 +60,35 @@ public class RedNeuronal {
      *
      * @param datosTesting : conjunto de testing que provee información del
      * estado actual de la red.
+     *
+     * @param serie : serie de datos que almacena los puntos a graficar
      */
     public void train(double learningRate, double[][] datosTraining, int cantMiniBatch,
-            int epocas, double[][] datosTesting) {
-
-        acumCostes = 0;
-        cantCostes = 0;
+            int epocas, double[][] datosTesting, XYChart.Series serie) {
+        this.cantBatch = cantMiniBatch;
 
         for (int i = 0; i < epocas; i++) {
-            gradientDescent(learningRate, datosTraining, cantMiniBatch);
+            acumCostes = 0;
+            cantCostes = 0;
+            double costoEntrenamiento;
+            costoEntrenamiento = gradientDescent(learningRate, datosTraining, cantMiniBatch);
+            //epocas debe ser mayor a 100
             if (i % (epocas / 100) == 0 && datosTesting != null) {
                 //informacion de conjunto de training
+                acumCostes = 0;
+                cantCostes = 0;
                 double aciertosTraining = test(datosTraining);
                 System.out.println("**Training->Epoca: " + i + " - AvgError: "
                         + acumCostes / cantCostes + " - Aciertos: " + aciertosTraining);
-                acumCostes = 0;
-                cantCostes = 0;
 
                 //informacion de conjunto de testing
+                acumCostes = 0;
+                cantCostes = 0;
                 double aciertosTesting = test(datosTesting);
                 System.out.println("..Testing->Epoca: " + i + " - AvgError: "
                         + acumCostes / cantCostes + " - Aciertos: " + aciertosTesting);
-                acumCostes = 0;
-                cantCostes = 0;
             }
+            serie.getData().add(new XYChart.Data(i, costoEntrenamiento));
         }
     }
 
@@ -98,12 +109,14 @@ public class RedNeuronal {
      * entrenamiento.
      *
      * @param epocas : cantidad de epocas que repetira el gradient descent
+     *
+     * @param serie : serie de datos que almacena los puntos a graficar
      */
-    public void train(double learningRate, double[][] datosTraining, int cantMiniBatch, int epocas) {
-        train(learningRate, datosTraining, cantMiniBatch, epocas, null);
+    public void train(double learningRate, double[][] datosTraining, int cantMiniBatch, int epocas, XYChart.Series serie) {
+        train(learningRate, datosTraining, cantMiniBatch, epocas, null, serie);
     }
 
-    private void gradientDescent(double learningRate, double[][] datosTraining, int cantMiniBatch) {
+    private double gradientDescent(double learningRate, double[][] datosTraining, int cantMiniBatch) {
         int datosXBatch = (datosTraining.length / cantMiniBatch)
                 + (datosTraining.length % cantMiniBatch > 0 ? 1 : 0),
                 datosRecorridos = 0, batchRecorridos = 0;
@@ -136,6 +149,7 @@ public class RedNeuronal {
             //actualizo los pesos de cada arco de la red
             actualizarNodos(learningRate, datosXBatch);
         }
+        return acumCostes / datosTraining.length;
     }
 
     private void forwardPass(double[] dato, double[][] sumasPonderadas, double[][] salidasNodos) {
@@ -150,6 +164,10 @@ public class RedNeuronal {
             for (int j = 0; j < salidasNodos[i + 1].length; j++) {
                 salidasNodos[i + 1][j] = funcionSigmoide(sumasPonderadas[i][j]);
             }
+        }
+        for (int i = 0; i < salidasNodos.length; i++) {
+            double valorSalida = (dato[dato.length - 1] != i) ? 0 : 1;
+            acumCostes += Math.pow(funcionCosteDerivada(valorSalida, salidasNodos[salidasNodos.length-1][i]), 2);
         }
     }
 
@@ -241,15 +259,14 @@ public class RedNeuronal {
             double salidaMax = -1, indiceMax = -1;
             for (int i = 0; i < salidasNodos.length; i++) {
                 double valorSalida = (dato[dato.length - 1] != i) ? 0 : 1;
-//                acumCostes += Math.pow(funcionCosteDerivada(valorSalida, salidasNodos[i]), 2);
-                acumCostes += Math.abs(funcionCosteDerivada(valorSalida, salidasNodos[i]));
-                cantCostes++;
+                acumCostes += Math.pow(funcionCosteDerivada(valorSalida, salidasNodos[i]), 2);
 
                 if (salidaMax < salidasNodos[i]) {
                     indiceMax = i;
                     salidaMax = salidasNodos[i];
                 }
             }
+            cantCostes++;
 
             //verifico si fue un acierto y lo acumulo
             aciertos += (dato[dato.length - 1] == indiceMax) ? 1 : 0;
@@ -302,8 +319,6 @@ public class RedNeuronal {
     }
 
     private double funcionCosteDerivada(double esperado, double obtenido) {
-//                acumCostes += Math.abs(esperado - obtenido);
-//        cantCostes++;
         return esperado - obtenido;
     }
 }
