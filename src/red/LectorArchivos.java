@@ -14,10 +14,6 @@ public class LectorArchivos {
         return leerDataset("poker/poker-hand-training-true.data");
     }
 
-    public static String[][] leerDatosEjemploTraining() {
-        return leerDataset("ejemplo/ejemplo.data");
-    }
-
     public static String[][] leerDatosPokerTesting() {
         return leerDataset("poker/poker-hand-testing.data");
     }
@@ -27,7 +23,7 @@ public class LectorArchivos {
         ArrayList<String[]> datosLista = new ArrayList<>();
         String[][] datos = null;
         try {
-            br = getBuffer("src/dataset/" + fileName);
+            br = getBuffer("src/data/" + fileName);
             String st;
             try {
                 while ((st = br.readLine()) != null) {

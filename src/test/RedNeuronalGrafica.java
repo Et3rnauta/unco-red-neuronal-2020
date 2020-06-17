@@ -15,23 +15,21 @@ public class RedNeuronalGrafica extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         System.out.println("Se hace la prueba con muestra de errores graficamente");
-        stage.setTitle("Red Neuronal - Error por Época");
+        stage.setTitle("Red Neuronal - Error por Época - Estocástico");
         //definir ejes
         final NumberAxis xAxis = new NumberAxis();
         final NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Iteración");
         yAxis.setLabel("Error");
         //crear el grafico
-        final LineChart<Number, Number> lineChart
-                = new LineChart<Number, Number>(xAxis, yAxis);
+        final LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
 
-        lineChart.setTitle("Gráfico de Error por Época"); //TODO : ver si es por epoca, o por iteración
+        lineChart.setTitle("Gráfico de Error por Época - Estocástico"); 
         //definir la serie
         XYChart.Series series = new XYChart.Series();
         series.setName("Error Obtenido");
 
         System.out.println("Creando la red");
-
         TraductorDatos traductor = new TraductorDatos(10);
         for (int i = 0; i < 5; i++) {
             traductor.addEntrada(1, 5);
@@ -41,8 +39,8 @@ public class RedNeuronalGrafica extends Application {
 
         System.out.println("Carga los datos");
         String[][] datosTraining = LectorArchivos.leerDatosPokerTraining(),
-                datosTesting = LectorArchivos.leerDatosPokerTesting(); //TODO: devolver arr object
-
+                datosTesting = LectorArchivos.leerDatosPokerTesting(); 
+        
         double[][] datosTrainingTraducidos = new double[datosTraining.length][],
                 datosTestingTraducidos = new double[datosTesting.length][];
 
@@ -57,11 +55,9 @@ public class RedNeuronalGrafica extends Application {
         }
 
         System.out.println("Primera fase de testing");
-        //redNeuronal.mostrarRed();
         double porcentajePrevio = redNeuronal.testRed(datosTestingTraducidos);
-        //redNeuronal.mostrarRed();
         System.out.println("Previo: " + porcentajePrevio);
-        redNeuronal.toJson("red-binario-poker-1ºtest");
+        redNeuronal.toJson("red-estocástica-pre");
 
         System.out.println("Fase de training");
         int cantEntrenamientos = 500;
@@ -69,15 +65,14 @@ public class RedNeuronalGrafica extends Application {
         //cargar errores        
         redNeuronal.cantEntrenamientos = cantEntrenamientos;
         for (int i = 0; i < cantEntrenamientos; i++) {
-            double error = redNeuronal.gradientDescent1(0.1, datosTrainingTraducidos);            
+            double error = redNeuronal.gradientDescent(0.1, datosTrainingTraducidos);
             series.getData().add(new XYChart.Data(i, error));
-            i++;
         }
 
         //Test con datos de Testing         
         System.out.println("Segunda fase de testing");
         double porcentajePosterior = redNeuronal.testRed(datosTestingTraducidos);
-        redNeuronal.toJson("redPresentación");
+        redNeuronal.toJson("red-estocástica-post");
         System.out.println("Posterior: " + porcentajePosterior);
 
         Scene scene = new Scene(lineChart, 600, 600);
